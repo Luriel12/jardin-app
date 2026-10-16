@@ -720,20 +720,20 @@
         // 2. Share via WhatsApp uses EXCLUSIVELY 80mm Thermal Receipt Format
         async function shareTirillaWhatsApp() {
             try {
-                const { doc, clientName, grandTotal } = await generatePdfReceipt('SERVICE PROFORMA');
+                const { doc, clientName, grandTotal } = await generatePdfReceipt('INVOICE');
                 const pdfBlob = doc.output('blob');
                 const fileName = `Proforma-${clientName.replace(/\s+/g, '_')}.pdf`;
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share({
-                        title: 'Service Proforma - Calderoni Services LLC',
-                        text: `Hello ${clientName}, here is your service proforma for a total of ${grandTotal}.`,
+                        title: 'INVOICE - Calderoni Services LLC',
+                        text: `Hello ${clientName}, here is your INVOICE for a total of ${grandTotal}.`,
                         files: [file],
                     });
                 } else {
                     doc.save(fileName);
-                    const message = encodeURIComponent(`Hello ${clientName}, here is your service proforma PDF for a total of ${grandTotal}.`);
+                    const message = encodeURIComponent(`Hello ${clientName}, here is your INVOICE PDF for a total of ${grandTotal}.`);
                     window.open(`https://api.whatsapp.com/send?text=${message}`, '_blank');
                 }
             } catch (error) {
@@ -743,7 +743,7 @@
         }
 
         // Generate 80mm Thermal PDF Receipt
-        async function generatePdfReceipt(docType = 'SERVICE PROFORMA') {
+        async function generatePdfReceipt(docType = 'INVOICE') {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({
                 unit: 'mm',

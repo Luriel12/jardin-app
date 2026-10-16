@@ -245,7 +245,7 @@ class ClientController extends Controller
         $proforma = $client->proforma;
 
         return view('a4_invoice', [
-            'documentTitle'   => 'SERVICE PROFORMA',
+            'documentTitle'   => 'INVOICE',
             'documentNumber'  => 'PROF-' . str_pad($client->id, 5, '0', STR_PAD_LEFT),
             'documentDate'    => date('m/d/Y'),
             'clientName'      => $client->name,
