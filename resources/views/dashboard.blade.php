@@ -537,7 +537,9 @@
                     document.getElementById('profLaborDesc').value = proforma.labor_desc || '';
                     document.getElementById('profLaborPrice').value = parseFloat(proforma.labor_price || 0).toFixed(2);
                 } else {
-                    addProformaRow('MATERIALS', 1, 0.00);
+                    addProformaRow('SPECTICIDE', 4, 0.00);
+                    addProformaRow('FUNGICIDE', 4, 0.00);
+                    addProformaRow('DUMP', 1, 0.00);
                     document.getElementById('profLaborDesc').value = 'INCLUDES LABOR';
                     document.getElementById('profLaborPrice').value = '50.00';
                 }
