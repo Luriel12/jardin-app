@@ -56,7 +56,7 @@
                 <!-- Document Title Box -->
                 <div class="text-right">
                     <div class="bg-slate-900 text-white px-4 py-2 rounded-xl shadow-sm">
-                        <p id="docTitleText" class="text-sm font-bold uppercase tracking-wider">{{ $documentTitle ?? 'SERVICE PROFORMA' }}</p>
+                        <p id="docTitleText" class="text-sm font-bold uppercase tracking-wider">{{ $documentTitle ?? 'INVOICE' }}</p>
                     </div>
                     <p id="docNumberText" class="text-xs font-mono font-bold text-slate-600 mt-2">N° {{ $documentNumber ?? 'PROF-00001' }}</p>
                     <p class="text-xs text-slate-500 mt-0.5">Date: <span id="docDateText" class="font-medium text-slate-800">{{ $documentDate ?? date('m/d/Y') }}</span></p>
