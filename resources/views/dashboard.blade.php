@@ -54,14 +54,45 @@
             </div>
         @endif
 
-        <!-- Buscador -->
-        <form action="{{ route('dashboard') }}" method="GET" class="mb-4 flex gap-2">
-            <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="🔍 Buscar por nombre, calle o número..." class="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none">
-            @if(isset($search) && $search)
-                <a href="{{ route('dashboard') }}" class="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center">Limpiar</a>
-            @else
-                <button type="submit" class="bg-green-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow">Buscar</button>
-            @endif
+       <!-- Buscador y Filtros -->
+        <form action="{{ route('dashboard') }}" method="GET" class="mb-4 flex flex-col sm:flex-row gap-2">
+            <!-- Campo de Búsqueda -->
+            <div class="relative flex-1">
+                <input type="text" 
+                    name="search" 
+                    value="{{ request('search') }}" 
+                    placeholder="🔍 Buscar por nombre, calle o número..." 
+                    class="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none">
+            </div>
+
+            <div class="flex gap-2">
+                <!-- Botón o Toggle de Suspendidos -->
+                @if(request('status') === 'suspended')
+                    <a href="{{ route('dashboard', array_filter(['search' => request('search')])) }}" 
+                    class="bg-red-100 text-red-700 border border-red-300 px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1 shadow-sm transition hover:bg-red-200">
+                        🚫 Mostrando Suspendidos (Quitar)
+                    </a>
+                    <input type="hidden" name="status" value="suspended">
+                @else
+                    <a href="{{ route('dashboard', array_merge(request('search') ? ['search' => request('search')] : [], ['status' => 'suspended'])) }}" 
+                    class="bg-gray-100 text-gray-700 border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1 transition shadow-sm">
+                        🚫 Solo Suspendidos
+                    </a>
+                @endif
+
+                <!-- Botones de Acción / Limpieza -->
+                @if(request('search') || request('status'))
+                    <a href="{{ route('dashboard') }}" 
+                    class="bg-gray-200 text-gray-700 hover:bg-gray-300 px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center transition">
+                        Limpiar
+                    </a>
+                @endif
+
+                <button type="submit" 
+                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow transition">
+                    Buscar
+                </button>
+            </div>
         </form>
 
         <!-- Lista de Clientes -->

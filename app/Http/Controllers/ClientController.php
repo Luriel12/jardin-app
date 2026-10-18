@@ -13,31 +13,38 @@ class ClientController extends Controller
     public function index(Request $request)
     {
         $search = $request->get('search');
+        $status = $request->get('status'); // Recogemos el parámetro de estado
         $query = Client::query();
         
+        // 1. Filtro por término de búsqueda (nombre, calle o número de casa)
         if ($search) {
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('street', 'like', "%{$search}%")
-                  ->orWhere('house_number', 'like', "%{$search}%");
+                ->orWhere('street', 'like', "%{$search}%")
+                ->orWhere('house_number', 'like', "%{$search}%");
             });
         }
 
-        // 1. Ordenamos directamente en la base de datos:
-        //    - Primero los activos (is_active = 1 o status activo) vs suspendidos (al final).
-        //    - Luego por la fecha de última atención de forma descendente (los más recientes primero).
+        // 2. Filtro exclusivo para clientes suspendidos
+        if ($status === 'suspended') {
+            $query->where('is_active', 0); // Asumiendo que 0 es suspendido/inactivo
+        }
+
+        // 3. Ordenamiento directamente en la base de datos:
+        //    - Primero los activos vs suspendidos (al final).
+        //    - Luego por la fecha de última atención.
         $clients = $query->orderByRaw("CASE WHEN is_active = 0 THEN 1 ELSE 0 END ASC")
-                         ->orderByRaw("CASE WHEN last_service_date IS NULL THEN 1 ELSE 0 END DESC")
-                         ->orderBy('last_service_date', 'ASC')
-                         ->get()
-                         ->map(function ($client) {
-                             if ($client->last_service_date) {
-                                 $client->days_ago = (int) Carbon::parse($client->last_service_date)->diffInDays(now());
-                             } else {
-                                 $client->days_ago = 9999; 
-                             }
-                             return $client;
-                         });
+                        ->orderByRaw("CASE WHEN last_service_date IS NULL THEN 1 ELSE 0 END DESC")
+                        ->orderBy('last_service_date', 'ASC')
+                        ->get()
+                        ->map(function ($client) {
+                            if ($client->last_service_date) {
+                                $client->days_ago = (int) Carbon::parse($client->last_service_date)->diffInDays(now());
+                            } else {
+                                $client->days_ago = 9999; 
+                            }
+                            return $client;
+                        });
 
         return view('dashboard', compact('clients', 'search'));
     }
