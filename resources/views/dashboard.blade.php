@@ -753,7 +753,7 @@
             try {
                 const { doc, clientName, grandTotal } = await generatePdfReceipt('INVOICE');
                 const pdfBlob = doc.output('blob');
-                const fileName = `Proforma-${clientName.replace(/\s+/g, '_')}.pdf`;
+                const fileName = `INVOICE-${clientName.replace(/\s+/g, '_')}.pdf`;
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {

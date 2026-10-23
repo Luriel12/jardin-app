@@ -27,16 +27,25 @@ class ClientController extends Controller
 
         // 2. Filtro exclusivo para clientes suspendidos
         if ($status === 'suspended') {
-            $query->where('is_active', 0); // Asumiendo que 0 es suspendido/inactivo
+            $query->where('is_active', 0); // 0 = suspendido/inactivo
         }
 
-        // 3. Ordenamiento directamente en la base de datos:
-        //    - Primero los activos vs suspendidos (al final).
-        //    - Luego por la fecha de última atención.
-        $clients = $query->orderByRaw("CASE WHEN is_active = 0 THEN 1 ELSE 0 END ASC")
-                        ->orderByRaw("CASE WHEN last_service_date IS NULL THEN 1 ELSE 0 END DESC")
-                        ->orderBy('last_service_date', 'ASC')
-                        ->get()
+        // 3. Ordenamiento condicional
+        if ($status === 'suspended') {
+            // EXCLUSIVO SUSPENDIDOS:
+            // Primero aseguramos que los registros CON fecha salgan primero y los NULL al final.
+            // Ordenamos por fecha DESC para que los atendidos MÁS RECIENTEMENTE (menos días sin atender) queden arriba.
+            $query->orderByRaw("CASE WHEN last_service_date IS NULL THEN 1 ELSE 0 END ASC")
+                ->orderBy('last_service_date', 'DESC');
+        } else {
+            // VISTA GENERAL (Sin cambios):
+            // Activos primero, suspendidos al final.
+            $query->orderByRaw("CASE WHEN is_active = 0 THEN 1 ELSE 0 END ASC")
+                ->orderByRaw("CASE WHEN last_service_date IS NULL THEN 1 ELSE 0 END DESC")
+                ->orderBy('last_service_date', 'ASC');
+        }
+
+        $clients = $query->get()
                         ->map(function ($client) {
                             if ($client->last_service_date) {
                                 $client->days_ago = (int) Carbon::parse($client->last_service_date)->diffInDays(now());

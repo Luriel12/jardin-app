@@ -184,6 +184,16 @@
     </div>
 
     <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Si la URL NO tiene el parámetro 'reloaded', la recargamos automáticamente una sola vez
+            if (!urlParams.has('reloaded')) {
+                const separator = window.location.search ? '&' : '?';
+                window.location.href = window.location.href + separator + 'reloaded=1';
+            }
+        });
+        
         // Navegación de retorno inteligente (Detecta si viene de Reportes o Dashboard)
         function smartGoBack() {
             // Si la ventana tiene un abridor o es una pestaña nueva, la cerramos limpiamente
@@ -210,7 +220,14 @@
         }
 
         // Generar y Compartir Tirilla Térmica de 80mm por WhatsApp
+        // Variable global o de ámbito para controlar el bloqueo
+        let isSharingThermal = false;
+
         async function shareThermalWhatsApp() {
+            // Si ya hay un proceso de compartición activo, ignoramos el nuevo clic
+            if (isSharingThermal) return;
+            isSharingThermal = true;
+
             try {
                 const { jsPDF } = window.jspdf;
                 if (!jsPDF) {
@@ -327,23 +344,38 @@
                 doc.text("Thank you for choosing Calderoni Services LLC!", 40, y, { align: "center" });
 
                 const pdfBlob = doc.output('blob');
-                const fileName = `Receipt-${clientName.replace(/\s+/g, '_')}.pdf`;
+        
+                // Validación en mayúsculas y prefijos exactos
+                const upperTitle = docTitle.toUpperCase();
+                const isProforma = upperTitle.includes('PROFORMA') || upperTitle.includes('INVOICE');
+                const filePrefix = isProforma ? 'INVOICE' : 'PAYMENT_RECEIPT';
+                const fileName = `${filePrefix}-${clientName.replace(/\s+/g, '_')}.pdf`;
+
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+                // Texto dinámico según el tipo de documento
+                const docTypeLabel = isProforma ? 'invoice' : 'payment receipt';
 
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share({
                         title: docTitle + ' - Calderoni Services LLC',
-                        text: `Hello ${clientName.trim()}, here is your document copy for a total of ${totalPaid}.`,
+                        text: `Hello ${clientName.trim()}, here is your ${docTypeLabel} for a total of ${totalPaid}.`,
                         files: [file],
                     });
                 } else {
                     doc.save(fileName);
-                    const message = encodeURIComponent(`Hello ${clientName.trim()}, here is your document copy PDF for a total of ${totalPaid}.`);
+                    const message = encodeURIComponent(`Hello ${clientName.trim()}, here is your ${docTypeLabel} for a total of ${totalPaid}.`);
                     window.open(`https://api.whatsapp.com/send?text=${message}`, '_blank');
                 }
             } catch (error) {
-                console.error('Error sharing thermal WhatsApp:', error);
-                alert('Could not share document via WhatsApp: ' + error.message);
+                // Ignoramos el error si el usuario simplemente canceló / cerró el menú de compartir (AbortError)
+                if (error.name !== 'AbortError') {
+                    console.error('Error sharing thermal WhatsApp:', error);
+                    alert('Could not share document via WhatsApp: ' + error.message);
+                }
+            } finally {
+                // Liberamos el candado pase lo que pase
+                isSharingThermal = false;
             }
         }
     </script>
