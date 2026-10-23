@@ -14,18 +14,30 @@ class ClientController extends Controller
     {
         $search = $request->get('search');
         $status = $request->get('status'); // Recogemos el parámetro de estado
+        
+        // Query principal para la tabla
         $query = Client::query();
+        
+        // Query base para los contadores (respeta la búsqueda actual si existe)
+        $countQuery = Client::query();
         
         // 1. Filtro por término de búsqueda (nombre, calle o número de casa)
         if ($search) {
-            $query->where(function($q) use ($search) {
+            $searchFilter = function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                 ->orWhere('street', 'like', "%{$search}%")
                 ->orWhere('house_number', 'like', "%{$search}%");
-            });
+            };
+            
+            $query->where($searchFilter);
+            $countQuery->where($searchFilter);
         }
 
-        // 2. Filtro exclusivo para clientes suspendidos
+        // Calculamos activos e inactivos (is_active = 0 es suspendido/inactivo según tu lógica)
+        $activeCount = (clone $countQuery)->where('is_active', '!=', 0)->count();
+        $inactiveCount = (clone $countQuery)->where('is_active', 0)->count();
+
+        // 2. Filtro exclusivo para clientes suspendidos en la tabla principal
         if ($status === 'suspended') {
             $query->where('is_active', 0); // 0 = suspendido/inactivo
         }
@@ -33,12 +45,10 @@ class ClientController extends Controller
         // 3. Ordenamiento condicional
         if ($status === 'suspended') {
             // EXCLUSIVO SUSPENDIDOS:
-            // Primero aseguramos que los registros CON fecha salgan primero y los NULL al final.
-            // Ordenamos por fecha DESC para que los atendidos MÁS RECIENTEMENTE (menos días sin atender) queden arriba.
             $query->orderByRaw("CASE WHEN last_service_date IS NULL THEN 1 ELSE 0 END ASC")
                 ->orderBy('last_service_date', 'DESC');
         } else {
-            // VISTA GENERAL (Sin cambios):
+            // VISTA GENERAL:
             // Activos primero, suspendidos al final.
             $query->orderByRaw("CASE WHEN is_active = 0 THEN 1 ELSE 0 END ASC")
                 ->orderByRaw("CASE WHEN last_service_date IS NULL THEN 1 ELSE 0 END DESC")
@@ -46,16 +56,16 @@ class ClientController extends Controller
         }
 
         $clients = $query->get()
-                        ->map(function ($client) {
-                            if ($client->last_service_date) {
-                                $client->days_ago = (int) Carbon::parse($client->last_service_date)->diffInDays(now());
-                            } else {
-                                $client->days_ago = 9999; 
-                            }
-                            return $client;
-                        });
+                    ->map(function ($client) {
+                        if ($client->last_service_date) {
+                            $client->days_ago = (int) Carbon::parse($client->last_service_date)->diffInDays(now());
+                        } else {
+                            $client->days_ago = 9999; 
+                        }
+                        return $client;
+                    });
 
-        return view('dashboard', compact('clients', 'search'));
+        return view('dashboard', compact('clients', 'search', 'activeCount', 'inactiveCount'));
     }
 
     public function store(Request $request)

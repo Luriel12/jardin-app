@@ -55,9 +55,10 @@
         @endif
 
        <!-- Buscador y Filtros -->
-        <form action="{{ route('dashboard') }}" method="GET" class="mb-4 flex flex-col sm:flex-row gap-2">
+        <!-- Buscador y Filtros -->
+        <form action="{{ route('dashboard') }}" method="GET" class="mb-4 flex flex-col sm:flex-row gap-2 items-start">
             <!-- Campo de Búsqueda -->
-            <div class="relative flex-1">
+            <div class="relative flex-1 w-full">
                 <input type="text" 
                     name="search" 
                     value="{{ request('search') }}" 
@@ -65,33 +66,49 @@
                     class="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none">
             </div>
 
-            <div class="flex gap-2">
-                <!-- Botón o Toggle de Suspendidos -->
-                @if(request('status') === 'suspended')
-                    <a href="{{ route('dashboard', array_filter(['search' => request('search')])) }}" 
-                    class="bg-red-100 text-red-700 border border-red-300 px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1 shadow-sm transition hover:bg-red-200">
-                        🚫 Mostrando Suspendidos (Quitar)
-                    </a>
-                    <input type="hidden" name="status" value="suspended">
-                @else
-                    <a href="{{ route('dashboard', array_merge(request('search') ? ['search' => request('search')] : [], ['status' => 'suspended'])) }}" 
-                    class="bg-gray-100 text-gray-700 border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1 transition shadow-sm">
-                        🚫 Solo Suspendidos
-                    </a>
-                @endif
+            <!-- Contenedor derecho: Botones arriba y Contador abajo -->
+            <div class="flex flex-col gap-2 w-full sm:w-auto">
+                <div class="flex gap-2 flex-wrap sm:flex-nowrap items-center">
+                    <!-- Botón o Toggle de Suspendidos -->
+                    @if(request('status') === 'suspended')
+                        <a href="{{ route('dashboard', array_filter(['search' => request('search')])) }}" 
+                        class="bg-red-100 text-red-700 border border-red-300 px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1 shadow-sm transition hover:bg-red-200">
+                            🚫 Mostrando Suspendidos (Quitar)
+                        </a>
+                        <input type="hidden" name="status" value="suspended">
+                    @else
+                        <a href="{{ route('dashboard', array_merge(request('search') ? ['search' => request('search')] : [], ['status' => 'suspended'])) }}" 
+                        class="bg-gray-100 text-gray-700 border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1 transition shadow-sm">
+                            🚫 Solo Suspendidos
+                        </a>
+                    @endif
 
-                <!-- Botones de Acción / Limpieza -->
-                @if(request('search') || request('status'))
-                    <a href="{{ route('dashboard') }}" 
-                    class="bg-gray-200 text-gray-700 hover:bg-gray-300 px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center transition">
-                        Limpiar
-                    </a>
-                @endif
+                    <!-- Botones de Acción / Limpieza -->
+                    @if(request('search') || request('status'))
+                        <a href="{{ route('dashboard') }}" 
+                        class="bg-gray-200 text-gray-700 hover:bg-gray-300 px-4 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center transition">
+                            Limpiar
+                        </a>
+                    @endif
 
-                <button type="submit" 
-                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow transition">
-                    Buscar
-                </button>
+                    <button type="submit" 
+                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow transition">
+                        Buscar
+                    </button>
+                </div>
+
+                <!-- Contador Dinámico Condicional -->
+                <div class="text-right bg-gray-50 border border-gray-100 px-4 py-2 rounded-xl">
+                    <p class="text-xs text-gray-500 font-medium">
+                        @if(request('status') === 'suspended')
+                            Suspended Clients: {{ count($clients) }}
+                        @elseif(request('search'))
+                            Clients Displayed: {{ count($clients) }}
+                        @else
+                            Active Clients: {{ $activeCount }} | Inactive Clients: {{ $inactiveCount }}
+                        @endif
+                    </p>
+                </div>
             </div>
         </form>
 
