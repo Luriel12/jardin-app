@@ -748,38 +748,82 @@
             window.open(`/documents/a4?type=proforma&client_id=${activeModalClientId}`, '_blank');
         }
 
+        // Función auxiliar para cargar el logo y convertirlo a Base64 de forma segura
+        async function getLogoBase64(url) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    resolve({
+                        dataUrl: canvas.toDataURL('image/png'),
+                        width: img.naturalWidth,
+                        height: img.naturalHeight
+                    });
+                };
+                img.onerror = () => resolve(null);
+                img.src = url;
+            });
+        }
+
         // 2. Share via WhatsApp uses EXCLUSIVELY 80mm Thermal Receipt Format
         async function shareTirillaWhatsApp() {
             try {
-                const { doc, clientName, grandTotal } = await generatePdfReceipt('INVOICE');
+                const docType = 'INVOICE'; // O 'PAYMENT RECEIPT' según corresponda
+                const { doc, clientName, grandTotal } = await generatePdfReceipt(docType);
+                
+                const upperType = docType.toUpperCase();
+                const filePrefix = upperType.includes('PAYMENT') ? 'PAYMENT_RECEIPT' : 'INVOICE';
+                const fileName = `${filePrefix}-${clientName.replace(/\s+/g, '_')}.pdf`;
+                
                 const pdfBlob = doc.output('blob');
-                const fileName = `INVOICE-${clientName.replace(/\s+/g, '_')}.pdf`;
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+                const docTypeLabel = upperType.includes('PAYMENT') ? 'payment receipt' : 'invoice';
 
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share({
-                        title: 'INVOICE - Calderoni Services LLC',
-                        text: `Hello ${clientName}, here is your INVOICE for a total of ${grandTotal}.`,
+                        title: `${docType} - Calderoni Services LLC`,
+                        text: `Hello ${clientName.trim()}, here is your ${docTypeLabel} for a total of ${grandTotal}.`,
                         files: [file],
                     });
                 } else {
                     doc.save(fileName);
-                    const message = encodeURIComponent(`Hello ${clientName}, here is your INVOICE PDF for a total of ${grandTotal}.`);
+                    const message = encodeURIComponent(`Hello ${clientName.trim()}, here is your ${docTypeLabel} for a total of ${grandTotal}.`);
                     window.open(`https://api.whatsapp.com/send?text=${message}`, '_blank');
                 }
             } catch (error) {
-                console.error('Error sharing via WhatsApp:', error);
-                alert('Could not share document via WhatsApp: ' + error.message);
+                if (error.name !== 'AbortError') {
+                    console.error('Error sharing via WhatsApp:', error);
+                    alert('Could not share document via WhatsApp: ' + error.message);
+                }
             }
         }
 
-        // Generate 80mm Thermal PDF Receipt
+        // Generate 80mm Thermal PDF Receipt with Logo
         async function generatePdfReceipt(docType = 'INVOICE') {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({
                 unit: 'mm',
                 format: [80, 180]
             });
+
+            let y = 8;
+
+            // --- Inserción Segura del Logo en el Térmico del Modal ---
+            const logoInfo = await getLogoBase64("{{ asset('images/logo.png') }}");
+            if (logoInfo) {
+                const imgWidth = 24; // Ancho fijo en mm para la tirilla
+                const imgHeight = (logoInfo.height / logoInfo.width) * imgWidth; // Alto proporcional
+                const imgX = (80 - imgWidth) / 2; // Centrado horizontal (80mm ancho total)
+
+                doc.addImage(logoInfo.dataUrl, 'PNG', imgX, y, imgWidth, imgHeight);
+                y += imgHeight + 3; // Espacio limpio después del logo
+            }
 
             const clientName = document.getElementById('profName')?.innerText || 'Valued Customer';
             const clientAddress = document.getElementById('profAddress')?.innerText || 'No address provided';
@@ -790,18 +834,23 @@
             const grandTotal = document.getElementById('profGrandTotal')?.innerText || '$0.00';
             const laborDesc = document.getElementById('profLaborDesc')?.value || '';
 
-            let y = 10;
-
+            // Header texts centrados y profesionales
             doc.setFont("helvetica", "bold");
-            doc.setFontSize(11);
-            doc.text("CALDERONI SERVICES LLC", 5, y);
+            doc.setFontSize(10);
+            doc.text("CALDERONI SERVICES LLC", 40, y, { align: "center" });
             
+            y += 4;
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(7.5);
+            doc.text("Professional Landscaping & Maintenance", 40, y, { align: "center" });
+            
+            y += 5;
+            doc.setFont("helvetica", "bold");
+            doc.text(docType.toUpperCase(), 40, y, { align: "center" });
+
             y += 5;
             doc.setFont("helvetica", "normal");
-            doc.setFontSize(8);
-            doc.text(docType, 5, y);
-            
-            y += 5;
+            doc.setFontSize(7);
             doc.text(`Date: ${profDate}`, 5, y);
 
             y += 4;

@@ -219,7 +219,28 @@
             html2pdf().from(element).set(opt).save();
         }
 
-        // Generar y Compartir Tirilla Térmica de 80mm por WhatsApp
+        // Función auxiliar para cargar el logo y convertirlo a Base64 de forma segura
+        async function getLogoBase64(url) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    resolve({
+                        dataUrl: canvas.toDataURL('image/png'),
+                        width: img.naturalWidth,
+                        height: img.naturalHeight
+                    });
+                };
+                img.onerror = () => resolve(null);
+                img.src = url;
+            });
+        }
+
         // Variable global o de ámbito para controlar el bloqueo
         let isSharingThermal = false;
 
@@ -240,7 +261,18 @@
                     format: [80, 150]
                 });
 
-                let y = 10;
+                let y = 8; // Empezamos un poquito más arriba para dar espacio al logo
+
+                // --- Inserción Segura del Logo ---
+                const logoInfo = await getLogoBase64("{{ asset('images/logo.png') }}");
+                if (logoInfo) {
+                    const imgWidth = 24; // Ancho fijo en mm para la tirilla térmica
+                    const imgHeight = (logoInfo.height / logoInfo.width) * imgWidth; // Alto proporcional
+                    const imgX = (80 - imgWidth) / 2; // Centrado horizontal (80mm ancho total)
+
+                    doc.addImage(logoInfo.dataUrl, 'PNG', imgX, y, imgWidth, imgHeight);
+                    y += imgHeight + 3; // Bajamos el cursor 'y' dejando espacio limpio
+                }
 
                 const docTitle = document.getElementById('docTitleText')?.innerText || 'SERVICE DOCUMENT';
                 const recDate = document.getElementById('docDateText')?.innerText || '';
@@ -344,7 +376,7 @@
                 doc.text("Thank you for choosing Calderoni Services LLC!", 40, y, { align: "center" });
 
                 const pdfBlob = doc.output('blob');
-        
+                
                 // Validación en mayúsculas y prefijos exactos
                 const upperTitle = docTitle.toUpperCase();
                 const isProforma = upperTitle.includes('PROFORMA') || upperTitle.includes('INVOICE');
@@ -353,7 +385,7 @@
 
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
-                // Texto dinámico según el tipo de documento
+                // Texto dinámico según el tipo de documento en inglés
                 const docTypeLabel = isProforma ? 'invoice' : 'payment receipt';
 
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -368,13 +400,11 @@
                     window.open(`https://api.whatsapp.com/send?text=${message}`, '_blank');
                 }
             } catch (error) {
-                // Ignoramos el error si el usuario simplemente canceló / cerró el menú de compartir (AbortError)
                 if (error.name !== 'AbortError') {
                     console.error('Error sharing thermal WhatsApp:', error);
                     alert('Could not share document via WhatsApp: ' + error.message);
                 }
             } finally {
-                // Liberamos el candado pase lo que pase
                 isSharingThermal = false;
             }
         }
