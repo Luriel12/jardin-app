@@ -105,7 +105,7 @@
                         @elseif(request('search'))
                             Clients Displayed: {{ count($clients) }}
                         @else
-                            Active Clients: {{ $activeCount }} | Inactive Clients: {{ $inactiveCount }}
+                            Active Clients: {{ $activeCount }} | Suspended Clients: {{ $inactiveCount }}
                         @endif
                     </p>
                 </div>
