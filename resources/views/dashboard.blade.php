@@ -54,9 +54,8 @@
             </div>
         @endif
 
-       <!-- Buscador y Filtros -->
-        <!-- Buscador y Filtros -->
-        <form action="{{ route('dashboard') }}" method="GET" class="mb-4 flex flex-col sm:flex-row gap-2 items-start">
+        <!-- Buscador y Filtros Estático (Debajo del menú superior) -->
+        <form action="{{ route('dashboard') }}" method="GET" class="sticky top-16 z-20 bg-white p-3 rounded-2xl shadow-lg border border-gray-200 mb-4 flex flex-col sm:flex-row gap-2 items-start transition-all">
             <!-- Campo de Búsqueda -->
             <div class="relative flex-1 w-full">
                 <input type="text" 
@@ -105,7 +104,7 @@
                         @elseif(request('search'))
                             Clients Displayed: {{ count($clients) }}
                         @else
-                            Active Clients: {{ $activeCount }} | Suspended Clients: {{ $inactiveCount }}
+                            Active Clients: {{ $activeCount }} | Inactive Clients: {{ $inactiveCount }}
                         @endif
                     </p>
                 </div>

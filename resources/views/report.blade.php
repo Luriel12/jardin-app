@@ -23,20 +23,22 @@
 
     <main class="max-w-4xl mx-auto p-4 space-y-4">
         
+    <!-- ADVANCED FILTER MODULE & SUMMARY CARD (Sticky Sólido) -->
+    <div class="sticky top-16 z-20 bg-white p-4 rounded-2xl shadow-lg border border-gray-200 space-y-4 mb-4 transition-all">
         <!-- SUMMARY CARD -->
-        <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100 flex justify-between items-center">
+        <div class="flex justify-between items-center bg-gray-50 p-4 rounded-xl border border-gray-100">
             <div>
                 <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Accumulated Income</p>
-                <h2 class="text-3xl font-black text-green-700 mt-1">${{ number_format($totalIncome ?? 0, 2) }}</h2>
+                <h2 class="text-2xl sm:text-3xl font-black text-green-700 mt-1">${{ number_format($totalIncome ?? 0, 2) }}</h2>
             </div>
-            <div class="text-right bg-gray-50 border border-gray-100 px-4 py-3 rounded-xl">
+            <div class="text-right bg-white border border-gray-100 px-4 py-2.5 rounded-xl shadow-sm">
                 <p class="text-xs text-gray-500 font-medium">Services Recorded:</p>
-                <p class="text-lg font-bold text-gray-700">{{ count($records) }}</p>
+                <p class="text-base sm:text-lg font-bold text-gray-700">{{ count($records) }}</p>
             </div>
         </div>
 
         <!-- ADVANCED FILTER MODULE -->
-        <div class="bg-white p-5 rounded-2xl shadow-md border border-gray-100 space-y-4">
+        <div class="space-y-3">
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Filter Reports</h3>
             
             <form action="{{ route('report') }}" method="GET" class="space-y-3">
@@ -66,9 +68,10 @@
                 </div>
             </form>
         </div>
+    </div>
 
         <!-- TRANSACTION LIST -->
-        <div class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden mt-4">
             <div class="p-4 border-b border-gray-100 bg-gray-50 font-bold text-xs text-gray-700 uppercase tracking-wider">
                 Service & Payment History
             </div>
